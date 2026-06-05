@@ -43,6 +43,8 @@ export const CONTRACT_ABI = [
   "function mint() payable",
   "function transferFrom(address from, address to, uint256 tokenId)",
   "function safeTransferFrom(address from, address to, uint256 tokenId)",
+  "function isApprovedForAll(address owner, address operator) view returns (bool)",
+  "function setApprovalForAll(address operator, bool approved)",
   "function batchTransfer(address[] recipients, uint256[] tokenIds)",
   "function batchTransferTo(address recipient, uint256[] tokenIds)",
   "function setBaseURI(string baseURI)",

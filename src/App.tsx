@@ -1054,6 +1054,26 @@ export default function App() {
     setStatus(`Sending ${tokenIds.length} Ocicat NFT${tokenIds.length === 1 ? "" : "s"}...`);
 
     try {
+      const isApprovedForBatch = await contractCall<boolean>(
+        writeContract,
+        "isApprovedForAll",
+        address,
+        CONTRACT_ADDRESS,
+      );
+
+      if (!isApprovedForBatch) {
+        setStatus("Approval required before batch send. Confirm approval in your wallet...");
+        const approvalTx = await contractCall<TxResponse>(
+          writeContract,
+          "setApprovalForAll",
+          CONTRACT_ADDRESS,
+          true,
+        );
+        setStatus(`Approval submitted: ${approvalTx.hash}`);
+        await approvalTx.wait();
+        setStatus("Approval confirmed. Sending selected NFTs...");
+      }
+
       const tx = await contractCall<TxResponse>(
         writeContract,
         "batchTransferTo",
@@ -1640,7 +1660,9 @@ export default function App() {
               </div>
 
               <p className="transfer-warning">{BATCH_TRANSFER_NOTICE}</p>
-              <p className="transfer-helper">Selected NFTs will be sent with the contract batch sender.</p>
+              <p className="transfer-helper">
+                If approval is not active, your wallet will ask to approve the NFT contract before sending.
+              </p>
 
               <label className="field">
                 <span>Recipient</span>
