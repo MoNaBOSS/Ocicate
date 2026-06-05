@@ -314,15 +314,13 @@ function giftStatusLabel(giftState: GiftState) {
     return "Checking gifts...";
   }
 
-  if (giftState.error) {
-    return "Gift status unavailable";
+  const remainingGifts = giftRemainingCount(giftState);
+
+  if (remainingGifts > 0n) {
+    return `🎁 ${formatGiftCount(remainingGifts)}`;
   }
 
-  if ((giftState.whitelist ?? 0n) > 0n) {
-    return "Free gift available 🎁";
-  }
-
-  if (giftState.whitelist === 0n) {
+  if (giftState.whitelist !== null || giftState.error) {
     return "No gifts found";
   }
 
@@ -331,6 +329,14 @@ function giftStatusLabel(giftState: GiftState) {
 
 function formatGiftCount(value: bigint | null) {
   return value === null ? "--" : value.toLocaleString();
+}
+
+function giftRemainingCount(giftState: GiftState) {
+  if (giftState.whitelist === null || giftState.claimed === null) {
+    return 0n;
+  }
+
+  return giftState.whitelist > giftState.claimed ? giftState.whitelist - giftState.claimed : 0n;
 }
 
 function NftImage({ nft }: { nft: OwnedNft }) {
@@ -455,7 +461,8 @@ export default function App() {
         .filter((nft): nft is OwnedNft => Boolean(nft)),
     [ownedNfts, selectedTokenIds],
   );
-  const isGiftEligible = (giftState.whitelist ?? 0n) > 0n;
+  const remainingGiftCount = giftRemainingCount(giftState);
+  const isGiftEligible = remainingGiftCount > 0n;
   const shouldShowGiftNotice = Boolean(address && isGiftEligible && !isGiftNoticeDismissed);
   const mintedPercent =
     contractInfo.totalSupplyRaw !== null && contractInfo.maxSupplyRaw
@@ -877,7 +884,7 @@ export default function App() {
       await Promise.all([refreshGiftStatus(address), loadOwnedNfts(address), readContractInfo()]);
     } catch (error) {
       const message = errorMessage(error);
-      setGiftState((current) => ({ ...current, error: message }));
+      await refreshGiftStatus(address);
       setStatus(`Gift claim failed: ${message}`);
     } finally {
       setGiftState((current) => ({ ...current, isClaiming: false }));
@@ -1260,31 +1267,19 @@ export default function App() {
                   <strong>{giftStatusLabel(giftState)}</strong>
                 </div>
                 <section className="gift-history">
-                  <div className="gift-history-title">
-                    <span>Gift Eligibility</span>
-                  </div>
-
                   {giftState.isLoading ? (
-                    <p>Checking whitelist...</p>
+                    <p>Checking gifts...</p>
                   ) : isGiftEligible ? (
                     <article className="gift-card available">
-                      <Gift size={18} />
-                      <div>
-                        <strong>Free OciCat NFT</strong>
-                        <span>Status: Free gift available 🎁</span>
-                        <span>Whitelist allocation: {formatGiftCount(giftState.whitelist)}</span>
-                        <span>Claimed so far: {formatGiftCount(giftState.claimed)}</span>
-                      </div>
+                      <strong className="gift-quantity">🎁 {formatGiftCount(remainingGiftCount)}</strong>
                       <button type="button" onClick={claimGift} disabled={giftState.isClaiming}>
                         {giftState.isClaiming ? <Loader2 className="spin" size={14} /> : <Gift size={14} />}
-                        Claim Gift
+                        Claim Free Gift
                       </button>
                     </article>
                   ) : (
-                    <p>{giftState.error || "No gifts found."}</p>
+                    <p>No gifts found.</p>
                   )}
-
-                  <p>Gift eligibility is controlled by the contract whitelist.</p>
 
                   {giftState.txHash && (
                     <a
@@ -1426,12 +1421,12 @@ export default function App() {
           <section className="gift-notice">
             <div>
               <Gift size={22} />
-              <span>You have a free gift 🎁</span>
+              <span>🎁 {formatGiftCount(remainingGiftCount)}</span>
             </div>
             <div>
               <button type="button" onClick={claimGift} disabled={giftState.isClaiming}>
                 {giftState.isClaiming ? <Loader2 className="spin" size={16} /> : <Gift size={16} />}
-                Claim Gift
+                Claim Free Gift
               </button>
               <button type="button" onClick={() => setIsGiftNoticeDismissed(true)} aria-label="Dismiss gift notice">
                 <X size={16} />
