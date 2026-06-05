@@ -95,13 +95,13 @@ type TxResponse = {
 };
 
 type TransferReceipt = {
-  tokenId: number;
+  tokenIds: number[];
   hash: string;
 };
 
 type GiftState = {
-  whitelist: boolean | null;
-  claimed: boolean | null;
+  whitelist: bigint | null;
+  claimed: bigint | null;
   isLoading: boolean;
   isClaiming: boolean;
   txHash: string;
@@ -123,8 +123,7 @@ const MINT_FUNCTIONS = ["mint(uint256)", "publicMint(uint256)", "mintNFT(uint256
 const SINGLE_MINT_FUNCTIONS = [...MINT_FUNCTIONS, "mint()"];
 const EXPECTED_SUPPLY = 3000;
 const MAX_MINT_QUANTITY = 50;
-const SEQUENTIAL_TRANSFER_NOTICE =
-  "This contract does not expose a compatible batch transfer function, so selected NFTs will be sent one by one.";
+const BATCH_TRANSFER_NOTICE = "Batch send enabled";
 const initialGiftState: GiftState = {
   whitelist: null,
   claimed: null,
@@ -266,6 +265,22 @@ function sameAddress(left: string, right: string) {
 }
 
 function errorMessage(error: unknown) {
+  if (typeof error === "object" && error) {
+    for (const key of ["shortMessage", "reason", "message"]) {
+      if (key in error) {
+        const value = (error as Record<string, unknown>)[key];
+        if (typeof value === "string" && value.trim()) {
+          return value;
+        }
+      }
+    }
+
+    const nestedMessage = (error as { info?: { error?: { message?: unknown } } }).info?.error?.message;
+    if (typeof nestedMessage === "string" && nestedMessage.trim()) {
+      return nestedMessage;
+    }
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
@@ -303,19 +318,19 @@ function giftStatusLabel(giftState: GiftState) {
     return "Gift status unavailable";
   }
 
-  if (giftState.whitelist === true && giftState.claimed === false) {
-    return "Free gift available";
+  if ((giftState.whitelist ?? 0n) > 0n) {
+    return "Free gift available 🎁";
   }
 
-  if (giftState.claimed === true) {
-    return "Gift already claimed";
-  }
-
-  if (giftState.whitelist === false) {
+  if (giftState.whitelist === 0n) {
     return "No gifts found";
   }
 
   return "Connect wallet to check gifts";
+}
+
+function formatGiftCount(value: bigint | null) {
+  return value === null ? "--" : value.toLocaleString();
 }
 
 function NftImage({ nft }: { nft: OwnedNft }) {
@@ -398,7 +413,6 @@ export default function App() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false);
   const [giftState, setGiftState] = useState<GiftState>(initialGiftState);
-  const [showUnclaimedOnly, setShowUnclaimedOnly] = useState(true);
   const [isGiftNoticeDismissed, setIsGiftNoticeDismissed] = useState(false);
 
   const readProvider = useMemo(
@@ -441,7 +455,7 @@ export default function App() {
         .filter((nft): nft is OwnedNft => Boolean(nft)),
     [ownedNfts, selectedTokenIds],
   );
-  const isGiftEligible = giftState.whitelist === true && giftState.claimed === false;
+  const isGiftEligible = (giftState.whitelist ?? 0n) > 0n;
   const shouldShowGiftNotice = Boolean(address && isGiftEligible && !isGiftNoticeDismissed);
   const mintedPercent =
     contractInfo.totalSupplyRaw !== null && contractInfo.maxSupplyRaw
@@ -601,8 +615,8 @@ export default function App() {
 
       try {
         const [whitelist, claimed] = await Promise.all([
-          contractCall<boolean>(readContract, "whitelist", walletAddress),
-          contractCall<boolean>(readContract, "claimed", walletAddress),
+          contractCall<bigint>(readContract, "whitelist", walletAddress),
+          contractCall<bigint>(readContract, "claimed", walletAddress),
         ]);
 
         setGiftState((current) => ({
@@ -861,7 +875,6 @@ export default function App() {
       await tx.wait();
       setStatus("Gift claimed successfully. Refreshing your collection...");
       await Promise.all([refreshGiftStatus(address), loadOwnedNfts(address), readContractInfo()]);
-      setIsGiftNoticeDismissed(true);
     } catch (error) {
       const message = errorMessage(error);
       setGiftState((current) => ({ ...current, error: message }));
@@ -1034,29 +1047,16 @@ export default function App() {
     setStatus(`Sending ${tokenIds.length} Ocicat NFT${tokenIds.length === 1 ? "" : "s"}...`);
 
     try {
-      const receipts: TransferReceipt[] = [];
+      const tx = await contractCall<TxResponse>(
+        writeContract,
+        "batchTransferTo",
+        recipient,
+        tokenIds.map((tokenId) => BigInt(tokenId)),
+      );
 
-      for (let index = 0; index < tokenIds.length; index += 1) {
-        const tokenId = tokenIds[index];
-        setStatus(
-          tokenIds.length === 1
-            ? `Transferring Ocicat #${tokenId}...`
-            : `Sequential transfer ${index + 1}/${tokenIds.length}: Ocicat #${tokenId}...`,
-        );
-
-        const tx = await contractCall<TxResponse>(
-          writeContract,
-          "safeTransferFrom(address,address,uint256)",
-          address,
-          recipient,
-          BigInt(tokenId),
-        );
-
-        receipts.push({ tokenId, hash: tx.hash });
-        setTransferReceipts([...receipts]);
-        setStatus(`Transfer submitted for Ocicat #${tokenId}: ${tx.hash}`);
-        await tx.wait();
-      }
+      setTransferReceipts([{ tokenIds, hash: tx.hash }]);
+      setStatus(`Batch transfer submitted: ${tx.hash}`);
+      await tx.wait();
 
       setRecipient("");
       await loadOwnedNfts(address);
@@ -1261,15 +1261,7 @@ export default function App() {
                 </div>
                 <section className="gift-history">
                   <div className="gift-history-title">
-                    <span>My Gifts History</span>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={showUnclaimedOnly}
-                        onChange={(event) => setShowUnclaimedOnly(event.target.checked)}
-                      />
-                      Unclaimed only
-                    </label>
+                    <span>Gift Eligibility</span>
                   </div>
 
                   {giftState.isLoading ? (
@@ -1279,28 +1271,20 @@ export default function App() {
                       <Gift size={18} />
                       <div>
                         <strong>Free OciCat NFT</strong>
-                        <span>Status: Unclaimed</span>
+                        <span>Status: Free gift available 🎁</span>
+                        <span>Whitelist allocation: {formatGiftCount(giftState.whitelist)}</span>
+                        <span>Claimed so far: {formatGiftCount(giftState.claimed)}</span>
                       </div>
                       <button type="button" onClick={claimGift} disabled={giftState.isClaiming}>
                         {giftState.isClaiming ? <Loader2 className="spin" size={14} /> : <Gift size={14} />}
                         Claim Gift
                       </button>
                     </article>
-                  ) : giftState.claimed ? (
-                    showUnclaimedOnly ? (
-                      <p>No unclaimed gifts found.</p>
-                    ) : (
-                      <article className="gift-card">
-                        <Gift size={18} />
-                        <div>
-                          <strong>Free OciCat NFT</strong>
-                          <span>Status: Gift already claimed</span>
-                        </div>
-                      </article>
-                    )
                   ) : (
                     <p>{giftState.error || "No gifts found."}</p>
                   )}
+
+                  <p>Gift eligibility is controlled by the contract whitelist.</p>
 
                   {giftState.txHash && (
                     <a
@@ -1660,10 +1644,8 @@ export default function App() {
                 )}
               </div>
 
-              {selectedTokenIds.length > 1 && (
-                <p className="transfer-warning">{SEQUENTIAL_TRANSFER_NOTICE}</p>
-              )}
-              <p className="transfer-helper">Selected NFTs will be sent one by one from your wallet.</p>
+              <p className="transfer-warning">{BATCH_TRANSFER_NOTICE}</p>
+              <p className="transfer-helper">Selected NFTs will be sent with the contract batch sender.</p>
 
               <label className="field">
                 <span>Recipient</span>
@@ -1715,9 +1697,9 @@ export default function App() {
                       href={`https://bscscan.com/tx/${receipt.hash}`}
                       target="_blank"
                       rel="noreferrer"
-                      key={`${receipt.tokenId}-${receipt.hash}`}
+                      key={receipt.hash}
                     >
-                      Ocicat #{receipt.tokenId}
+                      Ocicat {receipt.tokenIds.map((tokenId) => `#${tokenId}`).join(", ")}
                       <ExternalLink size={14} />
                     </a>
                   ))}
