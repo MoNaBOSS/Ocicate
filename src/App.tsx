@@ -1226,6 +1226,14 @@ export default function App() {
                 <div className="wallet-profile-head">
                   <span>Wallet Profile</span>
                   <strong>{truncateAddress(address)}</strong>
+                  <button
+                    className="wallet-close-button"
+                    type="button"
+                    onClick={() => setIsWalletMenuOpen(false)}
+                    aria-label="Close wallet profile"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
                 <div className="wallet-address-row">
                   <span>Full Address</span>
@@ -1525,16 +1533,18 @@ export default function App() {
                   <h2>{ownedNfts.length ? `${ownedNfts.length} detected` : "No NFTs loaded"}</h2>
                 </div>
                 <div className="panel-actions">
-                  {selectedTokenIds.length > 0 && (
-                    <button
-                      className="secondary-action compact"
-                      type="button"
-                      onClick={() => setActiveView("transfer")}
-                    >
-                      Send {selectedTokenIds.length}
-                      <Send size={16} />
-                    </button>
-                  )}
+                  <span className="selected-count">
+                    Selected: {selectedTokenIds.length} NFT{selectedTokenIds.length === 1 ? "" : "s"}
+                  </span>
+                  <button
+                    className="secondary-action compact"
+                    type="button"
+                    onClick={() => setActiveView("transfer")}
+                    disabled={selectedTokenIds.length === 0}
+                  >
+                    Send Selected
+                    <Send size={16} />
+                  </button>
                   <button
                     className="secondary-action compact"
                     type="button"
@@ -1653,6 +1663,7 @@ export default function App() {
               {selectedTokenIds.length > 1 && (
                 <p className="transfer-warning">{SEQUENTIAL_TRANSFER_NOTICE}</p>
               )}
+              <p className="transfer-helper">Selected NFTs will be sent one by one from your wallet.</p>
 
               <label className="field">
                 <span>Recipient</span>
@@ -1693,7 +1704,7 @@ export default function App() {
                 disabled={isTransferring || !selectedTokenIds.length}
               >
                 {isTransferring ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-                Send Selected
+                Send Selected NFTs
               </button>
 
               {transferReceipts.length > 0 && (

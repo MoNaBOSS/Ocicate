@@ -50,6 +50,7 @@ a {
 
 img {
   max-width: 100%;
+  height: auto;
 }
 
 .app {
@@ -215,8 +216,20 @@ img {
 }
 
 .wallet-profile-head {
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
+}
+
+.wallet-close-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 
 .wallet-address-row {
@@ -734,6 +747,13 @@ dd {
   box-shadow: var(--shadow);
 }
 
+.tier-card > div {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
 .tier-card img {
   width: 130px;
   height: 130px;
@@ -748,8 +768,9 @@ dd {
   color: var(--white);
   font-family: "Bebas Neue", Impact, sans-serif;
   font-size: 2.4rem;
-  line-height: 1;
+  line-height: 1.08;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .tier-card span,
@@ -761,6 +782,13 @@ dd {
 
 .tier-card.gold {
   border-color: #f5b74e;
+}
+
+.tier-card.red {
+  border-color: var(--red);
+  box-shadow:
+    0 0 0 2px rgba(240, 52, 61, 0.28),
+    var(--shadow);
 }
 
 .tier-card.blue {
@@ -807,6 +835,20 @@ dd {
   gap: 10px;
   align-items: center;
   justify-content: flex-end;
+}
+
+.selected-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .empty-state {
@@ -990,6 +1032,14 @@ dd {
   line-height: 1.5;
 }
 
+.transfer-helper {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .transfer-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1069,6 +1119,7 @@ dd {
 
 @media (max-width: 1100px) {
   .site-header {
+    position: sticky;
     grid-template-columns: 1fr auto;
     align-items: start;
   }
@@ -1087,6 +1138,10 @@ dd {
     padding-bottom: 0;
   }
 
+  .hero {
+    padding-top: 34px;
+  }
+
   .hero-cat {
     max-height: 340px;
   }
@@ -1102,15 +1157,21 @@ dd {
   }
 
   .status-band.with-top-offset {
-    padding-top: 150px;
+    padding-top: 24px;
   }
 }
 
 @media (max-width: 720px) {
   .site-header {
-    grid-template-columns: auto 1fr;
+    position: sticky;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 12px;
     padding: 10px 14px;
+  }
+
+  .brand-mark {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .brand-mark span {
@@ -1122,6 +1183,22 @@ dd {
     height: 48px;
   }
 
+  .wallet-actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: end;
+    min-width: 0;
+  }
+
+  .nav-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+
   .connect-button span {
     max-width: 132px;
     overflow: hidden;
@@ -1130,17 +1207,39 @@ dd {
   }
 
   .nav-actions button {
-    min-width: max-content;
-    padding-inline: 12px;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 10px;
+    font-size: 0.86rem;
   }
 
   .hero {
     min-height: auto;
-    padding-top: 152px;
+    padding-top: 24px;
   }
 
   .hero h1 {
-    font-size: clamp(4.6rem, 26vw, 7rem);
+    font-size: clamp(4.2rem, 22vw, 6.4rem);
+  }
+
+  .hero p {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .contract-link-panel {
+    width: 100%;
+  }
+
+  .contract-link-panel a {
+    width: 100%;
+    min-height: 48px;
+    padding-inline: 14px;
+    font-size: 0.92rem;
+  }
+
+  .hero-cat {
+    max-height: 300px;
   }
 
   .stat-grid,
@@ -1148,10 +1247,25 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .tier-card {
+    gap: 12px;
+    padding: 14px;
+  }
+
   .tier-card img {
     width: 100%;
     height: auto;
     aspect-ratio: 1;
+  }
+
+  .tier-card h3 {
+    margin: 0;
+    font-size: clamp(2.6rem, 12vw, 4rem);
+    line-height: 1.12;
+  }
+
+  .tier-card p {
+    margin-bottom: 0;
   }
 
   .panel-header {
@@ -1193,7 +1307,20 @@ dd {
   }
 
   .wallet-dropdown {
-    right: -4px;
+    position: fixed;
+    inset: auto 12px max(14px, env(safe-area-inset-bottom)) 12px;
+    width: auto;
+    max-height: min(74vh, 620px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px;
+    border-color: rgba(240, 52, 61, 0.55);
+    box-shadow: 0 -10px 42px rgba(0, 0, 0, 0.58);
+  }
+
+  .wallet-dropdown > div,
+  .gift-history {
+    padding: 9px;
   }
 
   .wallet-label-full {
@@ -1203,11 +1330,53 @@ dd {
   .wallet-label-short {
     display: inline;
   }
+
+  .status-band.with-top-offset {
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .brand-mark img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-actions,
+  .wallet-actions {
+    gap: 8px;
+  }
+
+  .hero {
+    padding-inline: 14px;
+  }
+
+  .hero-content {
+    gap: 18px;
+  }
+
+  .section-heading h2,
+  .panel-header h2 {
+    font-size: clamp(2.5rem, 14vw, 4.2rem);
+  }
+
+  .owned-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trait-row span {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 430px) {
   .site-header {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .nav-actions {
@@ -1216,8 +1385,8 @@ dd {
 
   .nav-actions button {
     min-height: 38px;
-    padding: 7px 10px;
-    font-size: 0.78rem;
+    padding: 7px 6px;
+    font-size: 0.72rem;
   }
 
   .wallet-actions {
@@ -1231,11 +1400,11 @@ dd {
 
   .connect-button {
     min-height: 38px;
-    padding-inline: 10px;
+    padding-inline: 9px;
   }
 
   .connect-button span {
-    max-width: 140px;
+    max-width: 124px;
   }
 
   .hero {
@@ -1244,6 +1413,8 @@ dd {
 
   .content-section {
     padding-inline: 12px;
+    padding-top: 38px;
+    padding-bottom: 54px;
   }
 
   .status-band {
@@ -1263,20 +1434,80 @@ dd {
   .mini-stats {
     padding: 11px;
   }
-}
 
-@media (max-width: 390px) {
-  .owned-grid,
-  .transfer-preview-grid {
+  .mint-panel,
+  .info-panel,
+  .nft-panel,
+  .transfer-panel {
+    padding: 14px;
+    box-shadow: 4px 4px 0 var(--black);
+  }
+
+  .panel-actions {
+    justify-content: stretch;
+  }
+
+  .selected-count,
+  .panel-actions .secondary-action.compact {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wallet-address-row {
     grid-template-columns: 1fr;
   }
 
+  .wallet-address-row .inline-icon-button {
+    width: 100%;
+  }
+
+  .wallet-dropdown strong {
+    font-size: 0.86rem;
+  }
+
+  .tier-grid {
+    gap: 14px;
+  }
+
+  .tier-card {
+    border-width: 2px;
+  }
+
+  .tier-card h3 {
+    font-size: clamp(2.9rem, 15vw, 4.4rem);
+  }
+}
+
+@media (max-width: 390px) {
   .brand-mark img {
     width: 42px;
     height: 42px;
   }
 
   .connect-button span {
-    max-width: 132px;
+    max-width: 104px;
+  }
+
+  .nav-actions button {
+    font-size: 0.68rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.8rem, 21vw, 5.4rem);
+  }
+
+  .contract-link-panel a {
+    font-size: 0.82rem;
+  }
+
+  .nft-card h3 {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 374px) {
+  .owned-grid,
+  .transfer-preview-grid {
+    grid-template-columns: 1fr;
   }
 }
