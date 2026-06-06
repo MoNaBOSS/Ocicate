@@ -640,6 +640,47 @@ dd {
   font-weight: 700;
 }
 
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 30px clamp(16px, 5vw, 72px) 42px;
+  color: var(--muted);
+}
+
+.site-footer span {
+  color: var(--white);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.site-footer nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  color: var(--white);
+  background: rgba(240, 52, 61, 0.16);
+  border: 1px solid rgba(240, 52, 61, 0.48);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 800;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .status-band {
   display: flex;
   align-items: center;
@@ -1162,6 +1203,15 @@ dd {
 
   .owned-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .site-footer nav {
+    justify-content: flex-start;
   }
 
   .status-band.with-top-offset {

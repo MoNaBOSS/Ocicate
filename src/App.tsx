@@ -122,8 +122,12 @@ const MAX_SUPPLY_FUNCTIONS = ["maxSupply", "MAX_SUPPLY", "MAX_NFT_SUPPLY", "coll
 const MINT_FUNCTIONS = ["mint(uint256)", "publicMint(uint256)", "mintNFT(uint256)", "safeMint(uint256)"];
 const SINGLE_MINT_FUNCTIONS = [...MINT_FUNCTIONS, "mint()"];
 const EXPECTED_SUPPLY = 3000;
-const MAX_MINT_QUANTITY = 50;
+const MAX_MINT_QUANTITY = 100;
 const BATCH_TRANSFER_NOTICE = "Batch send enabled";
+const SOCIAL_LINKS = [
+  { label: "X / Twitter", href: "https://x.com/ocicattoken" },
+  { label: "Telegram", href: "https://t.me/ocicatcoin" },
+];
 const initialGiftState: GiftState = {
   whitelist: null,
   claimed: null,
@@ -1408,7 +1412,7 @@ export default function App() {
                         <Plus size={18} />
                       </button>
                     </div>
-                    <small>Max 50 per wallet</small>
+                    <small>Max 100 per wallet</small>
                   </div>
                   <button className="primary-action" type="button" onClick={mint} disabled={isMinting || isSoldOut}>
                     {isMinting ? <Loader2 className="spin" size={18} /> : <Cat size={18} />}
@@ -1748,6 +1752,17 @@ export default function App() {
           </section>
         )}
       </main>
+      <footer className="site-footer">
+        <span>Ocicat NFT</span>
+        <nav aria-label="Social links">
+          {SOCIAL_LINKS.map((link) => (
+            <a href={link.href} target="_blank" rel="noreferrer" key={link.href}>
+              {link.label}
+              <ExternalLink size={14} />
+            </a>
+          ))}
+        </nav>
+      </footer>
     </div>
   );
 }
